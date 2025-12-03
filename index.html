@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Estados de Venezuela</title>
+    <!-- Carga de Tailwind CSS para estilos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Configuración de fuente y colores temáticos */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Un fondo gris claro */
+        }
+        .main-card {
+            background-color: #ffffff;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .venezuela-blue { background-color: #003893; }
+        .venezuela-yellow { background-color: #ffcc00; }
+        .venezuela-red { background-color: #cf142b; }
+        .btn-primary {
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .feedback-correct { 
+            background-color: #4ade80; /* Verde para correcto */
+            color: #166534;
+        } 
+        .feedback-incorrect { 
+            background-color: #f87171; /* Rojo para incorrecto */
+            color: #991b1b;
+        }
+
+        /* Estilos para los botones de opción del Quiz MC */
+        .option-button {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #e5e7eb; /* Gris claro */
+            color: #1f2937; /* Texto oscuro */
+            font-weight: 600;
+            text-align: left;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .option-button:not([disabled]):hover {
+            background-color: #d1d5db;
+        }
+        .option-button.selected-correct {
+            background-color: #4ade80 !important;
+            color: white !important;
+        }
+        .option-button.selected-incorrect {
+            background-color: #f87171 !important;
+            color: white !important;
+        }
+        .option-button[disabled] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Estilo para el input del Quiz Avanzado */
+        #answer-input-advanced {
+            padding: 1rem;
+            border: 2px solid #ccc;
+            border-radius: 0.5rem;
+            font-size: 1.125rem;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        #answer-input-advanced:focus {
+            outline: none;
+            border-color: #003893;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
+
+    <!-- Contenedor Principal -->
+    <div class="w-full max-w-4xl main-card rounded-xl p-6 md:p-10">
+
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">🇻🇪 Estados y Capitales de Venezuela 🇻🇪</h1>
+        <p class="text-center text-gray-600 mb-8">Estudia y evalúa tu conocimiento sobre la geografía venezolana.</p>
+
+        <!-- Controles de Navegación entre Modos -->
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <button id="mode-study" class="btn-primary venezuela-yellow text-gray-900 font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-yellow-400">
+                📚 Estudiar
+            </button>
+            <button id="mode-mc-quiz" class="btn-primary venezuela-blue text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700">
+                📝 Quiz Opción Múltiple
+            </button>
+            <button id="mode-advanced-quiz" class="btn-primary venezuela-blue text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700">
+                ✍️ Quiz Avanzado (Escribir)
+            </button>
+        </div>
+
+
+        <!-- Modo 1: Estudiar (Lista de Estados) -->
+        <div id="study-mode" class="space-y-6">
+            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2">Lista de Estados y Capitales</h2>
+            <div id="states-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- La lista se genera con JavaScript -->
+            </div>
+            <div class="flex justify-center pt-4">
+                 <button id="start-quiz-button" class="btn-primary venezuela-red text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-red-700">
+                    ¡Estoy listo para el Quiz!
+                </button>
+            </div>
+        </div>
+
+        <!-- Modo 2: Quiz Opción Múltiple (Oculto por defecto) -->
+        <div id="mc-quiz-mode" class="space-y-6 hidden">
+            <!-- Sección del Quiz MC -->
+            <div class="flex justify-between items-center text-lg font-semibold border-b pb-3 mb-4">
+                <span id="score-display-mc" class="text-gray-700">Puntuación: 0</span>
+                <span id="progress-display-mc" class="text-gray-500">Pregunta 1/10</span>
+            </div>
+
+            <!-- Pregunta Actual -->
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-lg shadow-md mb-6">
+                <p class="font-bold text-xl mb-2">¿Cuál es la capital de...?</p>
+                <p id="question-state-mc" class="text-3xl font-extrabold text-gray-900">Cargando Estado...</p>
+            </div>
+            
+            <!-- Opciones de Respuesta (Botones) -->
+            <div id="options-container-mc" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Los botones de opción se insertan aquí -->
+            </div>
+            
+            <!-- Retroalimentación -->
+            <div id="feedback-message-mc" class="text-center p-3 rounded-lg text-lg font-bold transition duration-300 ease-in-out hidden">
+                <!-- Aquí se mostrará la retroalimentación -->
+            </div>
+            
+            <!-- Botón Siguiente -->
+            <div class="flex justify-center pt-4">
+                <button id="next-button-mc" class="btn-primary venezuela-red text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-red-700 hidden">
+                    Siguiente Pregunta
+                </button>
+            </div>
+        </div>
+
+        <!-- Modo 3: Quiz Avanzado (Escribir Respuesta) (Oculto por defecto) -->
+        <div id="advanced-quiz-mode" class="space-y-6 hidden">
+            <!-- Sección del Quiz Avanzado -->
+            <div class="flex justify-between items-center text-lg font-semibold border-b pb-3 mb-4">
+                <span id="score-display-advanced" class="text-gray-700">Puntuación: 0</span>
+                <span id="progress-display-advanced" class="text-gray-500">Pregunta 1/10</span>
+            </div>
+
+            <!-- Pregunta Actual -->
+            <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4 rounded-lg shadow-md mb-6">
+                <p class="font-bold text-xl mb-2">Escribe la capital de... (sin acentos, comparación flexible)</p>
+                <p id="question-state-advanced" class="text-3xl font-extrabold text-gray-900">Cargando Estado...</p>
+            </div>
+
+            <!-- Input de Respuesta -->
+            <div class="flex gap-4 mb-6">
+                <input type="text" id="answer-input-advanced" placeholder="Escribe tu respuesta aquí" class="flex-grow">
+                <button id="submit-advanced-button" class="btn-primary venezuela-blue text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-700">
+                    Comprobar
+                </button>
+            </div>
+
+            <!-- Retroalimentación -->
+            <div id="feedback-message-advanced" class="text-center p-3 rounded-lg text-lg font-bold transition duration-300 ease-in-out hidden">
+                <!-- Aquí se mostrará la retroalimentación avanzada -->
+            </div>
+
+            <!-- Botón Siguiente -->
+            <div class="flex justify-center pt-4">
+                <button id="next-button-advanced" class="btn-primary venezuela-red text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-red-700 hidden">
+                    Siguiente Pregunta
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección de Conversación con Gemini -->
+        <div class="mt-12 pt-8 border-t border-gray-200">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-blue-500"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                Pregúntale a Gemini sobre Venezuela
+            </h2>
+            <div class="flex gap-4 mb-4">
+                <input type="text" id="gemini-input" placeholder="Ej: ¿Cuál es el estado más grande de Venezuela?" class="flex-grow p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <button id="gemini-submit" class="btn-primary venezuela-blue text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 disabled:opacity-50">
+                    Preguntar
+                </button>
+            </div>
+            <div id="gemini-output" class="p-4 rounded-lg bg-gray-100 text-gray-700 min-h-[50px]">
+                <p>Aquí obtendrás información en tiempo real sobre la geografía o historia de Venezuela. ¡Inténtalo!</p>
+            </div>
+            <div id="gemini-loading" class="mt-2 text-blue-500 font-semibold hidden">
+                <div class="flex items-center">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Buscando información...
+                </div>
+            </div>
+             <div id="gemini-sources" class="text-xs text-gray-500 mt-2"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultado Final (oculto por defecto) -->
+    <div id="result-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full text-center shadow-2xl">
+            <h3 id="modal-title" class="text-3xl font-bold mb-4 text-gray-800">¡Quiz Terminado!</h3>
+            <p id="modal-message" class="text-xl text-gray-600 mb-6">Tu puntuación final es: 0/10</p>
+            <button id="restart-button" data-mode="" class="btn-primary venezuela-blue text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-700">
+                Jugar de Nuevo
+            </button>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // La lista de estados y capitales de Venezuela
+        const ESTADOS = [
+            { estado: "Amazonas", capital: "Puerto Ayacucho" },
+            { estado: "Anzoátegui", capital: "Barcelona" },
+            { estado: "Apure", capital: "San Fernando de Apure" },
+            { estado: "Aragua", capital: "Maracay" },
+            { estado: "Barinas", capital: "Barinas" },
+            { estado: "Bolívar", capital: "Ciudad Bolívar" },
+            { estado: "Carabobo", capital: "Valencia" },
+            { estado: "Cojedes", capital: "San Carlos" },
+            { estado: "Delta Amacuro", capital: "Tucupita" },
+            { estado: "Falcón", capital: "Coro" },
+            { estado: "Guárico", capital: "San Juan de los Morros" },
+            { estado: "Lara", capital: "Barquisimeto" },
+            { estado: "Mérida", capital: "Mérida" },
+            { estado: "Miranda", capital: "Los Teques" },
+            { estado: "Monagas", capital: "Maturín" },
+            { estado: "Nueva Esparta", capital: "La Asunción" },
+            { estado: "Portuguesa", capital: "Guanare" },
+            { estado: "Sucre", capital: "Cumaná" },
+            { estado: "Táchira", capital: "San Cristóbal" },
+            { estado: "Trujillo", capital: "Trujillo" },
+            { estado: "La Guaira", capital: "La Guaira" },
+            { estado: "Yaracuy", capital: "San Felipe" },
+            { estado: "Zulia", capital: "Maracaibo" },
+            { estado: "Distrito Capital", capital: "Caracas" }
+        ].sort((a, b) => a.estado.localeCompare(b.estado)); // Ordenar alfabéticamente
+
+        // --- Variables de Estado Globales ---
+        const totalQuestions = 10;
+        let quizSequence = [];
+        let currentCorrectAnswer = "";
+        let currentMode = 'study';
+
+        // --- Variables de Estado para Quiz MC ---
+        let currentMCQuestion = 0;
+        let scoreMC = 0;
+        let optionsLockedMC = false;
+
+        // --- Variables de Estado para Quiz Avanzado ---
+        let currentAdvancedQuestion = 0;
+        let scoreAdvanced = 0;
+        let answerLockedAdvanced = false;
+
+        // --- Elementos del DOM ---
+        const $studyMode = document.getElementById('study-mode');
+        const $statesList = document.getElementById('states-list');
+        const $resultModal = document.getElementById('result-modal');
+        const $modalMessage = document.getElementById('modal-message');
+        const $restartButton = document.getElementById('restart-button');
+        const $startQuizButton = document.getElementById('start-quiz-button');
+
+        // Modo MC Quiz DOM
+        const $mcQuizMode = document.getElementById('mc-quiz-mode');
+        const $questionStateMC = document.getElementById('question-state-mc');
+        const $optionsContainerMC = document.getElementById('options-container-mc');
+        const $nextButtonMC = document.getElementById('next-button-mc');
+        const $feedbackMessageMC = document.getElementById('feedback-message-mc');
+        const $scoreDisplayMC = document.getElementById('score-display-mc');
+        const $progressDisplayMC = document.getElementById('progress-display-mc');
+        const $modeMCQuizButton = document.getElementById('mode-mc-quiz');
+
+        // Modo Avanzado Quiz DOM
+        const $advancedQuizMode = document.getElementById('advanced-quiz-mode');
+        const $questionStateAdvanced = document.getElementById('question-state-advanced');
+        const $answerInputAdvanced = document.getElementById('answer-input-advanced');
+        const $submitAdvancedButton = document.getElementById('submit-advanced-button');
+        const $nextButtonAdvanced = document.getElementById('next-button-advanced');
+        const $feedbackMessageAdvanced = document.getElementById('feedback-message-advanced');
+        const $scoreDisplayAdvanced = document.getElementById('score-display-advanced');
+        const $progressDisplayAdvanced = document.getElementById('progress-display-advanced');
+        const $modeAdvancedQuizButton = document.getElementById('mode-advanced-quiz');
+
+        // Gemini DOM
+        const $geminiInput = document.getElementById('gemini-input');
+        const $geminiSubmit = document.getElementById('gemini-submit');
+        const $geminiOutput = document.getElementById('gemini-output');
+        const $geminiLoading = document.getElementById('gemini-loading');
+        const $geminiSources = document.getElementById('gemini-sources');
+        
+        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=";
+        const API_KEY = ""; 
+
+        /**
+         * Función auxiliar para mezclar un array (Algoritmo Fisher-Yates).
+         * @param {Array} array Array a mezclar.
+         * @returns {Array} Array mezclado.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        /**
+         * Normaliza un texto para comparación: minúsculas, elimina acentos y signos de puntuación.
+         * @param {string} text Texto a normalizar.
+         * @returns {string} Texto normalizado.
+         */
+        function normalizeText(text) {
+            return text.toLowerCase()
+                       .normalize("NFD") // Descompone en letra + acento
+                       .replace(/[\u0300-\u036f]/g, "") // Elimina acentos
+                       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"") // Elimina puntuación
+                       .replace(/\s{2,}/g," ") // Elimina espacios dobles
+                       .trim();
+        }
+
+        /**
+         * Cambia entre los modos 'study', 'mc-quiz' y 'advanced-quiz'.
+         */
+        function switchMode(mode) {
+            currentMode = mode;
+
+            // Ocultar todos los modos y limpiar estados
+            $studyMode.classList.add('hidden');
+            $mcQuizMode.classList.add('hidden');
+            $advancedQuizMode.classList.add('hidden');
+            $resultModal.classList.add('hidden');
+
+            // Restablecer estilos de botones
+            const allModeButtons = [$modeMCQuizButton, $modeAdvancedQuizButton];
+            allModeButtons.forEach(btn => {
+                btn.classList.add('venezuela-blue', 'text-white');
+                btn.classList.remove('venezuela-yellow', 'text-gray-900');
+            });
+            const studyButton = document.getElementById('mode-study');
+            studyButton.classList.remove('venezuela-blue', 'text-white');
+            studyButton.classList.add('venezuela-yellow', 'text-gray-900');
+
+
+            if (mode === 'study') {
+                $studyMode.classList.remove('hidden');
+            } else if (mode === 'mc-quiz') {
+                $mcQuizMode.classList.remove('hidden');
+                $modeMCQuizButton.classList.add('venezuela-yellow', 'text-gray-900');
+                $modeMCQuizButton.classList.remove('venezuela-blue', 'text-white');
+                initializeMCQuiz();
+            } else if (mode === 'advanced-quiz') {
+                $advancedQuizMode.classList.remove('hidden');
+                $modeAdvancedQuizButton.classList.add('venezuela-yellow', 'text-gray-900');
+                $modeAdvancedQuizButton.classList.remove('venezuela-blue', 'text-white');
+                initializeAdvancedQuiz();
+            }
+        }
+
+        /**
+         * Genera y muestra la lista completa de estados y capitales.
+         */
+        function renderStatesList() {
+            $statesList.innerHTML = ESTADOS.map(item => `
+                <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <p class="font-bold text-gray-800">${item.estado}</p>
+                    <p class="text-sm text-gray-600">${item.capital}</p>
+                </div>
+            `).join('');
+        }
+
+        // --- Lógica del Quiz de Opción Múltiple (MC) ---
+
+        /**
+         * Inicializa la secuencia de preguntas del Quiz MC.
+         */
+        function initializeMCQuiz() {
+            currentMCQuestion = 0;
+            scoreMC = 0;
+            optionsLockedMC = false;
+            $scoreDisplayMC.textContent = `Puntuación: ${scoreMC}`;
+            $progressDisplayMC.textContent = `Pregunta 1/${totalQuestions}`;
+            
+            const shuffled = shuffleArray([...ESTADOS]);
+            quizSequence = shuffled.slice(0, totalQuestions);
+
+            loadMCQuestion();
+        }
+
+        /**
+         * Carga la pregunta actual en la interfaz y genera las 4 opciones aleatorias para MC.
+         */
+        function loadMCQuestion() {
+            if (currentMCQuestion >= totalQuestions) {
+                showResults(scoreMC, 'mc-quiz');
+                return;
+            }
+
+            optionsLockedMC = false;
+            const currentQuestionData = quizSequence[currentMCQuestion];
+            currentCorrectAnswer = currentQuestionData.capital;
+
+            $questionStateMC.textContent = currentQuestionData.estado;
+            $nextButtonMC.classList.add('hidden');
+            $feedbackMessageMC.classList.add('hidden');
+            $feedbackMessageMC.textContent = '';
+            $feedbackMessageMC.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            $progressDisplayMC.textContent = `Pregunta ${currentMCQuestion + 1}/${totalQuestions}`;
+            
+            const correctAnswer = currentQuestionData.capital;
+
+            const incorrectAnswers = ESTADOS
+                .filter(item => item.capital !== correctAnswer) 
+                .map(item => item.capital);
+            
+            const shuffledIncorrect = shuffleArray(incorrectAnswers);
+            const incorrectOptions = shuffledIncorrect.slice(0, 3);
+            
+            const allOptions = shuffleArray([correctAnswer, ...incorrectOptions]);
+
+            $optionsContainerMC.innerHTML = allOptions.map((option, index) => `
+                <button 
+                    class="option-button" 
+                    data-capital="${option}"
+                    id="option-mc-${index}"
+                >
+                    ${option}
+                </button>
+            `).join('');
+
+            $optionsContainerMC.querySelectorAll('.option-button').forEach(button => {
+                button.addEventListener('click', handleMCOptionClick);
+            });
+        }
+
+        /**
+         * Maneja el clic en una opción de respuesta del Quiz MC.
+         */
+        function handleMCOptionClick(event) {
+            if (optionsLockedMC) return; 
+
+            optionsLockedMC = true;
+            const selectedButton = event.currentTarget;
+            const userAnswer = selectedButton.getAttribute('data-capital');
+            const isCorrect = userAnswer === currentCorrectAnswer;
+            
+            $nextButtonMC.classList.remove('hidden');
+            $feedbackMessageMC.classList.remove('hidden');
+
+            $optionsContainerMC.querySelectorAll('.option-button').forEach(button => {
+                button.disabled = true;
+                if (button.getAttribute('data-capital') === currentCorrectAnswer) {
+                     button.classList.add('selected-correct');
+                }
+            });
+
+
+            if (isCorrect) {
+                scoreMC++;
+                $feedbackMessageMC.textContent = '¡Correcto! 🎉';
+                $feedbackMessageMC.classList.add('feedback-correct');
+                selectedButton.classList.add('selected-correct');
+            } else {
+                $feedbackMessageMC.textContent = `Incorrecto. La respuesta correcta era: ${currentCorrectAnswer}.`;
+                $feedbackMessageMC.classList.add('feedback-incorrect');
+                selectedButton.classList.add('selected-incorrect');
+            }
+            $scoreDisplayMC.textContent = `Puntuación: ${scoreMC}`;
+        }
+
+        /**
+         * Pasa a la siguiente pregunta del Quiz MC.
+         */
+        function nextMCQuestion() {
+            currentMCQuestion++;
+            loadMCQuestion();
+        }
+
+        // --- Lógica del Quiz Avanzado (Escribir) ---
+
+        /**
+         * Inicializa la secuencia de preguntas del Quiz Avanzado.
+         */
+        function initializeAdvancedQuiz() {
+            currentAdvancedQuestion = 0;
+            scoreAdvanced = 0;
+            answerLockedAdvanced = false;
+            $scoreDisplayAdvanced.textContent = `Puntuación: ${scoreAdvanced}`;
+            $progressDisplayAdvanced.textContent = `Pregunta 1/${totalQuestions}`;
+            
+            const shuffled = shuffleArray([...ESTADOS]);
+            quizSequence = shuffled.slice(0, totalQuestions);
+
+            loadAdvancedQuestion();
+        }
+
+        /**
+         * Carga la pregunta actual en la interfaz para el Quiz Avanzado.
+         */
+        function loadAdvancedQuestion() {
+            if (currentAdvancedQuestion >= totalQuestions) {
+                showResults(scoreAdvanced, 'advanced-quiz');
+                return;
+            }
+
+            answerLockedAdvanced = false;
+            const currentQuestionData = quizSequence[currentAdvancedQuestion];
+            currentCorrectAnswer = currentQuestionData.capital;
+
+            $questionStateAdvanced.textContent = currentQuestionData.estado;
+            $answerInputAdvanced.value = '';
+            $answerInputAdvanced.disabled = false;
+            $answerInputAdvanced.focus();
+            $submitAdvancedButton.disabled = false;
+            $nextButtonAdvanced.classList.add('hidden');
+            $feedbackMessageAdvanced.classList.add('hidden');
+            $feedbackMessageAdvanced.textContent = '';
+            $feedbackMessageAdvanced.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            $progressDisplayAdvanced.textContent = `Pregunta ${currentAdvancedQuestion + 1}/${totalQuestions}`;
+        }
+        
+        /**
+         * Maneja el envío de la respuesta del Quiz Avanzado.
+         */
+        function handleAdvancedSubmit() {
+            if (answerLockedAdvanced) return;
+
+            const userAnswer = $answerInputAdvanced.value;
+            if (!userAnswer.trim()) {
+                $feedbackMessageAdvanced.textContent = 'Por favor, escribe una respuesta.';
+                $feedbackMessageAdvanced.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
+                $feedbackMessageAdvanced.classList.add('bg-yellow-300', 'text-yellow-800');
+                return;
+            }
+            
+            answerLockedAdvanced = true;
+            $answerInputAdvanced.disabled = true;
+            $submitAdvancedButton.disabled = true;
+            
+            const normalizedUserAnswer = normalizeText(userAnswer);
+            const normalizedCorrectAnswer = normalizeText(currentCorrectAnswer);
+            
+            const isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
+
+            $nextButtonAdvanced.classList.remove('hidden');
+            $feedbackMessageAdvanced.classList.remove('hidden', 'bg-yellow-300', 'text-yellow-800');
+
+            if (isCorrect) {
+                scoreAdvanced++;
+                $feedbackMessageAdvanced.textContent = '¡Respuesta Correcta! 🎉';
+                $feedbackMessageAdvanced.classList.add('feedback-correct');
+            } else {
+                $feedbackMessageAdvanced.textContent = `Incorrecto. La respuesta correcta era: ${currentCorrectAnswer}.`;
+                $feedbackMessageAdvanced.classList.add('feedback-incorrect');
+            }
+            $scoreDisplayAdvanced.textContent = `Puntuación: ${scoreAdvanced}`;
+        }
+
+        /**
+         * Pasa a la siguiente pregunta del Quiz Avanzado.
+         */
+        function nextAdvancedQuestion() {
+            currentAdvancedQuestion++;
+            loadAdvancedQuestion();
+        }
+
+        // --- Lógica de Resultados y Modal ---
+
+        /**
+         * Muestra el modal con los resultados finales.
+         */
+        function showResults(finalScore, quizType) {
+            $modalMessage.textContent = `Tu puntuación final es: ${finalScore}/${totalQuestions}`;
+            $restartButton.dataset.mode = quizType; // Almacena el modo para reiniciar
+            $resultModal.classList.remove('hidden');
+        }
+        
+        /**
+         * Reinicia el quiz en el modo especificado.
+         */
+        function restartQuiz() {
+            const mode = $restartButton.dataset.mode;
+            switchMode(mode);
+        }
+
+        // --- Event Listeners Globales ---
+        
+        // Navegación de Modos
+        document.getElementById('mode-study').addEventListener('click', () => switchMode('study'));
+        $modeMCQuizButton.addEventListener('click', () => switchMode('mc-quiz'));
+        $modeAdvancedQuizButton.addEventListener('click', () => switchMode('advanced-quiz'));
+        $startQuizButton.addEventListener('click', () => switchMode('mc-quiz')); // El botón de inicio lleva al MC por defecto
+
+        // Botones de Siguiente y Reinicio
+        $nextButtonMC.addEventListener('click', nextMCQuestion);
+        $submitAdvancedButton.addEventListener('click', handleAdvancedSubmit);
+        $answerInputAdvanced.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleAdvancedSubmit();
+            }
+        });
+        $nextButtonAdvanced.addEventListener('click', nextAdvancedQuestion);
+        $restartButton.addEventListener('click', restartQuiz); 
+
+
+        // Inicializa la lista y el modo al cargar la página
+        renderStatesList();
+        switchMode('study');
+
+
+        // --- Funcionalidad del Chat Gemini (sin cambios) ---
+
+        /**
+         * Realiza una solicitud al API de Gemini con búsqueda web (grounding).
+         * Utiliza reintento exponencial en caso de fallos temporales.
+         */
+        async function fetchGeminiResponse(userPrompt, maxRetries = 5) {
+            if (!userPrompt.trim()) return;
+
+            $geminiOutput.innerHTML = '<p class="text-gray-500 italic">... generando respuesta ...</p>';
+            $geminiSources.textContent = '';
+            $geminiLoading.classList.remove('hidden');
+            $geminiSubmit.disabled = true;
+
+            const systemPrompt = "Actúa como un experto en geografía e historia de Venezuela. Responde a la pregunta del usuario de manera concisa y amigable, utilizando información real y actualizada. Tu respuesta debe ser solo en español.";
+            const apiUrl = `${API_URL}${API_KEY}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429 && attempt < maxRetries - 1) {
+                            const delay = Math.pow(2, attempt) * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        }
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        const text = candidate.content.parts[0].text;
+                        $geminiOutput.innerHTML = `<p>${text}</p>`;
+
+                        let sources = [];
+                        const groundingMetadata = candidate.groundingMetadata;
+                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                            sources = groundingMetadata.groundingAttributions
+                                .map(attribution => ({
+                                    uri: attribution.web?.uri,
+                                    title: attribution.web?.title,
+                                }))
+                                .filter(source => source.uri && source.title);
+                        }
+
+                        if (sources.length > 0) {
+                            const sourceHtml = sources.map((s, index) => 
+                                `<a href="${s.uri}" target="_blank" class="underline hover:text-blue-700">${s.title}</a>`
+                            ).join(' | ');
+                            $geminiSources.innerHTML = `<p class="font-bold">Fuentes:</p> ${sourceHtml}`;
+                        } else {
+                            $geminiSources.textContent = '';
+                        }
+                    } else {
+                        $geminiOutput.innerHTML = '<p class="text-red-500">No se pudo obtener una respuesta válida. Inténtalo de nuevo.</p>';
+                    }
+                    break; 
+                } catch (error) {
+                    if (attempt === maxRetries - 1) {
+                        console.error('Error al llamar a Gemini API:', error);
+                        $geminiOutput.innerHTML = `<p class="text-red-500">Ocurrió un error al procesar tu solicitud: ${error.message}.</p>`;
+                    }
+                }
+            }
+            
+            $geminiLoading.classList.add('hidden');
+            $geminiSubmit.disabled = false;
+        }
+
+        // --- Event Listeners de Gemini ---
+        $geminiSubmit.addEventListener('click', () => {
+            fetchGeminiResponse($geminiInput.value);
+        });
+
+        $geminiInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                fetchGeminiResponse($geminiInput.value);
+            }
+        });
+    </script>
+</body>
+</html>
