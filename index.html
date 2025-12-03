@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -179,33 +179,6 @@
                 </button>
             </div>
         </div>
-
-        <!-- Sección de Conversación con Gemini -->
-        <div class="mt-12 pt-8 border-t border-gray-200">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-blue-500"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-                Pregúntale a Gemini sobre Venezuela
-            </h2>
-            <div class="flex gap-4 mb-4">
-                <input type="text" id="gemini-input" placeholder="Ej: ¿Cuál es el estado más grande de Venezuela?" class="flex-grow p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                <button id="gemini-submit" class="btn-primary venezuela-blue text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 disabled:opacity-50">
-                    Preguntar
-                </button>
-            </div>
-            <div id="gemini-output" class="p-4 rounded-lg bg-gray-100 text-gray-700 min-h-[50px]">
-                <p>Aquí obtendrás información en tiempo real sobre la geografía o historia de Venezuela. ¡Inténtalo!</p>
-            </div>
-            <div id="gemini-loading" class="mt-2 text-blue-500 font-semibold hidden">
-                <div class="flex items-center">
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Buscando información...
-                </div>
-            </div>
-             <div id="gemini-sources" class="text-xs text-gray-500 mt-2"></div>
-        </div>
     </div>
 
     <!-- Modal de Resultado Final (oculto por defecto) -->
@@ -220,7 +193,7 @@
     </div>
 
 
-    <script type="module">
+    <script>
         // La lista de estados y capitales de Venezuela
         const ESTADOS = [
             { estado: "Amazonas", capital: "Puerto Ayacucho" },
@@ -293,17 +266,7 @@
         const $scoreDisplayAdvanced = document.getElementById('score-display-advanced');
         const $progressDisplayAdvanced = document.getElementById('progress-display-advanced');
         const $modeAdvancedQuizButton = document.getElementById('mode-advanced-quiz');
-
-        // Gemini DOM
-        const $geminiInput = document.getElementById('gemini-input');
-        const $geminiSubmit = document.getElementById('gemini-submit');
-        const $geminiOutput = document.getElementById('gemini-output');
-        const $geminiLoading = document.getElementById('gemini-loading');
-        const $geminiSources = document.getElementById('gemini-sources');
         
-        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=";
-        const API_KEY = ""; 
-
         /**
          * Función auxiliar para mezclar un array (Algoritmo Fisher-Yates).
          * @param {Array} array Array a mezclar.
@@ -343,7 +306,7 @@
             $advancedQuizMode.classList.add('hidden');
             $resultModal.classList.add('hidden');
 
-            // Restablecer estilos de botones
+            // Restablecer estilos de botones de navegación
             const allModeButtons = [$modeMCQuizButton, $modeAdvancedQuizButton];
             allModeButtons.forEach(btn => {
                 btn.classList.add('venezuela-blue', 'text-white');
@@ -620,102 +583,6 @@
         // Inicializa la lista y el modo al cargar la página
         renderStatesList();
         switchMode('study');
-
-
-        // --- Funcionalidad del Chat Gemini (sin cambios) ---
-
-        /**
-         * Realiza una solicitud al API de Gemini con búsqueda web (grounding).
-         * Utiliza reintento exponencial en caso de fallos temporales.
-         */
-        async function fetchGeminiResponse(userPrompt, maxRetries = 5) {
-            if (!userPrompt.trim()) return;
-
-            $geminiOutput.innerHTML = '<p class="text-gray-500 italic">... generando respuesta ...</p>';
-            $geminiSources.textContent = '';
-            $geminiLoading.classList.remove('hidden');
-            $geminiSubmit.disabled = true;
-
-            const systemPrompt = "Actúa como un experto en geografía e historia de Venezuela. Responde a la pregunta del usuario de manera concisa y amigable, utilizando información real y actualizada. Tu respuesta debe ser solo en español.";
-            const apiUrl = `${API_URL}${API_KEY}`;
-            
-            const payload = {
-                contents: [{ parts: [{ text: userPrompt }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-            };
-
-            for (let attempt = 0; attempt < maxRetries; attempt++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        if (response.status === 429 && attempt < maxRetries - 1) {
-                            const delay = Math.pow(2, attempt) * 1000;
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            continue;
-                        }
-                        throw new Error(`Error HTTP: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    const candidate = result.candidates?.[0];
-
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        const text = candidate.content.parts[0].text;
-                        $geminiOutput.innerHTML = `<p>${text}</p>`;
-
-                        let sources = [];
-                        const groundingMetadata = candidate.groundingMetadata;
-                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                            sources = groundingMetadata.groundingAttributions
-                                .map(attribution => ({
-                                    uri: attribution.web?.uri,
-                                    title: attribution.web?.title,
-                                }))
-                                .filter(source => source.uri && source.title);
-                        }
-
-                        if (sources.length > 0) {
-                            const sourceHtml = sources.map((s, index) => 
-                                `<a href="${s.uri}" target="_blank" class="underline hover:text-blue-700">${s.title}</a>`
-                            ).join(' | ');
-                            $geminiSources.innerHTML = `<p class="font-bold">Fuentes:</p> ${sourceHtml}`;
-                        } else {
-                            $geminiSources.textContent = '';
-                        }
-                    } else {
-                        $geminiOutput.innerHTML = '<p class="text-red-500">No se pudo obtener una respuesta válida. Inténtalo de nuevo.</p>';
-                    }
-                    break; 
-                } catch (error) {
-                    if (attempt === maxRetries - 1) {
-                        console.error('Error al llamar a Gemini API:', error);
-                        $geminiOutput.innerHTML = `<p class="text-red-500">Ocurrió un error al procesar tu solicitud: ${error.message}.</p>`;
-                    }
-                }
-            }
-            
-            $geminiLoading.classList.add('hidden');
-            $geminiSubmit.disabled = false;
-        }
-
-        // --- Event Listeners de Gemini ---
-        $geminiSubmit.addEventListener('click', () => {
-            fetchGeminiResponse($geminiInput.value);
-        });
-
-        $geminiInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                fetchGeminiResponse($geminiInput.value);
-            }
-        });
     </script>
 </body>
 </html>
